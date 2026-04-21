@@ -13,7 +13,7 @@ const defaultSettings = [
 
 async function ensureDefaultSettings() {
   const existing = await prisma.systemConfig.findMany();
-  const existingKeys = new Set(existing.map(e => e.key));
+  const existingKeys = new Set(existing.map((e: { key: string }) => e.key));
   
   for (const setting of defaultSettings) {
     if (!existingKeys.has(setting.key)) {
