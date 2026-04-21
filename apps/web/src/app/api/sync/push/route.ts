@@ -4,6 +4,8 @@ import { prisma } from "@jurista/database";
 import { getApiUser } from "@/lib/auth";
 import { apiSuccess, apiError, apiUnauthorized } from "@/lib/api-helpers";
 
+type TxClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends">;
+
 interface SyncOperation {
   syncId: string;
   entityType: string;
@@ -143,7 +145,7 @@ async function processClientOp(op: any, userId: string) {
 async function processLoanOp(op: SyncOperation, userId: string) {
   const p = op.payload as unknown as LoanPayload;
   if (op.action === "create") {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: TxClient) => {
       await tx.loan.upsert({
         where: { id: p.id },
         create: {
@@ -190,7 +192,7 @@ async function processLoanOp(op: SyncOperation, userId: string) {
 async function processPaymentOp(op: any, userId: string) {
   const p = op.payload;
   if (op.action === "create") {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: TxClient) => {
       await tx.payment.upsert({
         where: { id: p.id },
         create: {
