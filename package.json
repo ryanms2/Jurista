@@ -1,0 +1,30 @@
+{
+  "name": "jurista",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema de gerenciamento de empréstimos pessoais",
+  "scripts": {
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=@jurista/web",
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@jurista/web",
+    "dev:mobile": "turbo run dev --filter=@jurista/mobile",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "db:generate": "turbo run db:generate --filter=@jurista/database",
+    "db:push": "turbo run db:push --filter=@jurista/database",
+    "db:migrate": "turbo run db:migrate --filter=@jurista/database",
+    "db:seed": "turbo run db:seed --filter=@jurista/database",
+    "db:studio": "turbo run db:studio --filter=@jurista/database",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.3"
+  }
+}
