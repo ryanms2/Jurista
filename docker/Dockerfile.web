@@ -54,8 +54,8 @@ COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_module
 COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 COPY . .
 
-# Generate Prisma client using local prisma
-RUN cd packages/database && pnpm exec prisma generate
+# Generate Prisma client
+RUN pnpm --filter @jurista/database db:generate
 
 # Build shared packages first
 RUN pnpm --filter @jurista/shared build
@@ -80,10 +80,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 
 # Copy Prisma schema and generated client
 COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
-
-# Copy Prisma client from database package node_modules
 COPY --from=builder /app/packages/database/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/packages/database/node_modules/@prisma/client ./node_modules/@prisma/client
 
 USER nextjs
 
