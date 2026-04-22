@@ -60,6 +60,9 @@ RUN pnpm --filter @jurista/web build
 # ========================================
 # Stage 4: Production runner
 # ========================================
+# ========================================
+# Stage 4: Production runner
+# ========================================
 FROM base AS runner
 WORKDIR /app
 
@@ -69,12 +72,19 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy standalone output
+# 1. Copia o output standalone (isso recria a estrutura do seu monorepo)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
-# Copy node_modules for Prisma (must be accessible at runtime)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+# 2. O PULO DO GATO: Copia EXPLICITAMENTE os binários e o client do Prisma.
+# Como você roda o db:generate dentro do pacote de database, os binários ficam lá.
+COPY --from=builder --chown=nextjs:nodejs /app/packages/database/node_modules/.prisma ./packages/database/node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/packages/database/node_modules/@prisma ./packages/database/node_modules/@prisma
+
+# (Nota: Se o seu cliente estiver gerando na raiz por causa de algum hoisting do pnpm, 
+# descomente as linhas abaixo e apague as de cima)
+# COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 USER nextjs
 
