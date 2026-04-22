@@ -100,7 +100,7 @@ export default async function ClientDetailsPage({
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {client.photos.map((photo) => (
+                {client.photos.map((photo: { id: string; type: string; originalName: string | null }) => (
                   <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden bg-surface-hover border border-white/10">
                     <img 
                       src={`/api/photos/${photo.id}`} 
