@@ -54,7 +54,9 @@ COPY --from=deps /app/packages/database/node_modules ./packages/database/node_mo
 COPY . .
 
 RUN pnpm --filter @jurista/database db:generate
-RUN pnpm build
+RUN pnpm --filter @jurista/shared build
+RUN pnpm --filter @jurista/database build
+RUN pnpm --filter @jurista/web build
 
 # ========================================
 # Stage 4: Production runner
