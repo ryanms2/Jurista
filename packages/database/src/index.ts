@@ -19,22 +19,3 @@ export {
 } from "./repositories";
 
 export type { SystemConfigKey } from "./repositories";
-
-// Re-export Prisma types for convenience
-export type {
-  User,
-  Client,
-  ClientPhoto,
-  Loan,
-  Installment,
-  Payment,
-  CashMovement,
-  SystemConfig,
-  SyncQueue,
-  UserRole,
-  LoanFrequency,
-  LoanStatus,
-  InstallmentStatus,
-  PaymentMethod,
-  CashMovementType,
-} from "@prisma/client";
