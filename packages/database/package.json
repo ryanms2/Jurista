@@ -15,7 +15,8 @@
     "clean": "rm -rf dist node_modules/.prisma"
   },
   "dependencies": {
-    "@prisma/client": "^6.5.0"
+    "@prisma/client": "^6.5.0",
+    "@types/node": "^22.0.0"
   },
   "devDependencies": {
     "@jurista/tsconfig": "workspace:*",
