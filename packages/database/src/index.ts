@@ -19,3 +19,7 @@ export {
 } from "./repositories";
 
 export type { SystemConfigKey } from "./repositories";
+
+// Re-export types from Prisma
+import type { Prisma } from "@prisma/client";
+export type { Prisma };

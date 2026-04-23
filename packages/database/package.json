@@ -10,7 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm",
     "test:unit": "vitest run",
     "clean": "rm -rf dist node_modules/.prisma"
   },

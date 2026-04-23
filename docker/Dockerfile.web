@@ -53,9 +53,14 @@ COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_module
 COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 COPY . .
 
+# Important: Generate Prisma FIRST so types are available
 RUN pnpm --filter @jurista/database db:generate
+
+# Then build packages that use Prisma types
 RUN pnpm --filter @jurista/shared build
 RUN pnpm --filter @jurista/database build
+
+# Finally build the web app
 RUN pnpm --filter @jurista/web build
 
 # ========================================
