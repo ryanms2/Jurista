@@ -1,0 +1,275 @@
+// ============================================
+// Jurista — Prisma Schema
+// ============================================
+// Sistema de gerenciamento de empréstimos pessoais
+// PostgreSQL 16+ | Prisma 6.x
+// ============================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  output        = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  MASTER
+  COLLECTOR
+}
+
+enum LoanFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum LoanStatus {
+  ACTIVE
+  COMPLETED
+  DEFAULTED
+  RENEWED
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PARTIALLY_PAID
+}
+
+enum PaymentMethod {
+  PIX
+  CASH
+}
+
+enum CashMovementType {
+  INCOME
+  EXPENSE
+  WITHDRAWAL
+  DEPOSIT
+}
+
+// ==================== MODELS ====================
+
+/// Usuários do sistema (Master e Cobradores)
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String /// Argon2id hash
+  role          UserRole
+  phone         String?
+  active        Boolean  @default(true)
+  commissionPct Decimal? @db.Decimal(5, 2) /// % comissão padrão do cobrador
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  loans         Loan[]         @relation("CollectorLoans")
+  payments      Payment[]      @relation("CollectorPayments")
+  cashMovements CashMovement[]
+
+  @@index([role])
+  @@index([active])
+  @@map("users")
+}
+
+/// Clientes que recebem empréstimos
+model Client {
+  id          String  @id @default(cuid())
+  name        String
+  cpf         String  @unique
+  rg          String
+  address     String
+  phone1      String
+  phone2      String?
+  creditScore Int     @default(0) /// Pontuação interna (0-100)
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  photos ClientPhoto[]
+  loans  Loan[]
+
+  @@index([name])
+  @@index([active])
+  @@map("clients")
+}
+
+/// Fotos do cliente armazenadas no MinIO
+model ClientPhoto {
+  id           String  @id @default(cuid())
+  clientId     String
+  bucket       String  @default("client-photos")
+  objectKey    String /// MinIO object key: {clientId}/{uuid}.{ext}
+  originalName String /// Nome original do arquivo
+  type         String /// "rg" | "selfie" | "facade" | "other"
+  description  String?
+  sizeBytes    Int?
+  mimeType     String?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([type])
+  @@map("client_photos")
+}
+
+/// Empréstimos concedidos a clientes
+model Loan {
+  id                String        @id @default(cuid())
+  clientId          String
+  collectorId       String /// Cobrador responsável
+  amount            Decimal       @db.Decimal(12, 2) /// Valor emprestado
+  interestRate      Decimal       @db.Decimal(5, 2) /// Taxa de juros (%)
+  totalWithInterest Decimal       @db.Decimal(12, 2) /// Valor + juros
+  frequency         LoanFrequency
+  totalInstallments Int /// Nº total de parcelas
+  installmentAmount Decimal       @db.Decimal(12, 2) /// Valor de cada parcela
+  status            LoanStatus    @default(ACTIVE)
+  commissionPct     Decimal       @db.Decimal(5, 2) /// % comissão cobrador
+  commissionAmount  Decimal       @db.Decimal(12, 2) /// Valor total da comissão
+  lateFeeAmount     Decimal       @default(10) @db.Decimal(12, 2) /// R$ multa por intervalo
+  lateFeeDays       Int           @default(5) /// A cada X dias de atraso
+  startDate         DateTime
+  endDate           DateTime?
+  previousLoanId    String?       @unique /// Referência para renovação
+  notes             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  client       Client        @relation(fields: [clientId], references: [id])
+  collector    User          @relation("CollectorLoans", fields: [collectorId], references: [id])
+  installments Installment[]
+  previousLoan Loan?         @relation("LoanRenewal", fields: [previousLoanId], references: [id])
+  renewedLoan  Loan?         @relation("LoanRenewal")
+
+  @@index([clientId])
+  @@index([collectorId])
+  @@index([status])
+  @@index([startDate])
+  @@map("loans")
+}
+
+/// Parcelas de um empréstimo
+model Installment {
+  id            String            @id @default(cuid())
+  loanId        String
+  installmentNo Int /// Número da parcela (1, 2, 3...)
+  amount        Decimal           @db.Decimal(12, 2) /// Valor original
+  lateFee       Decimal           @default(0) @db.Decimal(12, 2) /// Multa acumulada
+  totalDue      Decimal           @db.Decimal(12, 2) /// amount + lateFee
+  dueDate       DateTime /// Data de vencimento (pula domingos)
+  status        InstallmentStatus @default(PENDING)
+  paidAmount    Decimal           @default(0) @db.Decimal(12, 2)
+  paidAt        DateTime?
+  daysOverdue   Int               @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  loan     Loan      @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([loanId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([loanId, installmentNo])
+  @@map("installments")
+}
+
+/// Pagamentos recebidos
+model Payment {
+  id            String        @id @default(cuid())
+  installmentId String
+  collectorId   String /// Quem recebeu o pagamento
+  amount        Decimal       @db.Decimal(12, 2)
+  method        PaymentMethod
+  receivedAt    DateTime      @default(now())
+  notes         String?
+  syncId        String?       @unique /// ID para sync offline
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  installment  Installment   @relation(fields: [installmentId], references: [id])
+  collector    User          @relation("CollectorPayments", fields: [collectorId], references: [id])
+  cashMovement CashMovement?
+
+  @@index([installmentId])
+  @@index([collectorId])
+  @@index([receivedAt])
+  @@index([method])
+  @@map("payments")
+}
+
+/// Movimentações do caixa
+model CashMovement {
+  id          String           @id @default(cuid())
+  userId      String /// Quem realizou
+  paymentId   String?          @unique /// Vínculo com pagamento
+  type        CashMovementType
+  amount      Decimal          @db.Decimal(12, 2)
+  description String?
+  date        DateTime         @default(now())
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([date])
+  @@map("cash_movements")
+}
+
+/// Configurações do sistema (chave-valor)
+model SystemConfig {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  value       String
+  description String?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configs")
+}
+
+/// Fila de sincronização offline (Outbox Pattern)
+model SyncQueue {
+  id         String  @id @default(cuid())
+  entityType String /// "payment" | "client" | "loan" | etc.
+  entityId   String /// ID da entidade
+  action     String /// "create" | "update" | "delete"
+  payload    Json /// Dados da operação
+  syncId     String  @unique /// UUID gerado no mobile
+  synced     Boolean @default(false)
+  attempts   Int     @default(0)
+  lastError  String?
+
+  createdAt DateTime  @default(now())
+  syncedAt  DateTime?
+
+  @@index([synced])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("sync_queue")
+}
