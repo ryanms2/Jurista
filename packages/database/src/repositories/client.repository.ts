@@ -1,5 +1,5 @@
 import { prisma } from "../client";
-import type { Prisma, Client } from "@prisma/client";
+import type { Prisma, Client } from "../../prisma/generated/client";;
 
 export class ClientRepository {
   /**

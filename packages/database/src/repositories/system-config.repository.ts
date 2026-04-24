@@ -1,5 +1,5 @@
 import { prisma } from "../client";
-import type { SystemConfig } from "@prisma/client";
+import type { SystemConfig } from "../../prisma/generated/client";
 
 /** Chaves de configuração do sistema */
 export type SystemConfigKey =

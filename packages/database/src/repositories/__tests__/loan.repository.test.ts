@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../../__tests__/client.mock";
 import { LoanRepository } from "../loan.repository";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../../../prisma/generated/client";
 
 describe("LoanRepository", () => {
   let loanRepository: LoanRepository;

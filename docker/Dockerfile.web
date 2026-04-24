@@ -74,10 +74,8 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
-# 2. (OPCIONAL/PRECAUÇÃO) Se o Next.js não trouxer o binário (.so.node) automaticamente, 
-# você copia diretamente da SUA pasta de output definida no schema.prisma.
-# Descomente a linha abaixo ajustando para o caminho exato do seu output:
-# COPY --from=builder --chown=nextjs:nodejs /app/packages/database/generated/client ./packages/database/generated/client
+# Copy Prisma generated client
+COPY --from=builder /app/packages/database/prisma/generated ./packages/database/prisma/generated
 
 USER nextjs
 

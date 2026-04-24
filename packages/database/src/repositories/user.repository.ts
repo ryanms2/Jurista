@@ -3,7 +3,7 @@ import type {
   Prisma,
   User,
   UserRole,
-} from "@prisma/client";
+} from "../../prisma/generated/client";
 
 export class UserRepository {
   /**

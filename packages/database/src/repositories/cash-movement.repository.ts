@@ -1,5 +1,5 @@
 import { prisma } from "../client";
-import type { Prisma, CashMovement, CashMovementType } from "@prisma/client";
+import type { Prisma, CashMovement, CashMovementType } from "../../prisma/generated/client";
 
 export class CashMovementRepository {
   /**

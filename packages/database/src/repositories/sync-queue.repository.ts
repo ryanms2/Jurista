@@ -1,5 +1,5 @@
 import { prisma } from "../client";
-import type { SyncQueue, Prisma } from "@prisma/client";
+import type { SyncQueue, Prisma } from "../../prisma/generated/client";
 
 export class SyncQueueRepository {
   /**

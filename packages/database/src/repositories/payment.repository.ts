@@ -1,5 +1,5 @@
 import { prisma } from "../client";
-import type { Prisma, Payment, PaymentMethod } from "@prisma/client";
+import type { Prisma, Payment, PaymentMethod } from "../../prisma/generated/client";
 
 export class PaymentRepository {
   /**

@@ -1,5 +1,5 @@
 import { prisma } from "../client";
-import type { Prisma, Installment, InstallmentStatus } from "@prisma/client";
+import type { Prisma, Installment, InstallmentStatus } from "../../prisma/generated/client";
 
 export class InstallmentRepository {
   /**
