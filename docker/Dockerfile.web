@@ -6,8 +6,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 RUN apk add --no-cache libc6-compat openssl
 
 # ========================================
-# Stage 2: Install dependencies
-# ========================================
+# Stage 2: Install dependencies AND generate Prisma
 FROM base AS deps
 WORKDIR /app
 
@@ -53,15 +52,11 @@ COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_module
 COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 COPY . .
 
-# Important: Generate Prisma FIRST so types are available
-RUN pnpm --filter @jurista/database db:generate
-
-# Then build packages that use Prisma types
-RUN pnpm --filter @jurista/shared build
-RUN pnpm --filter @jurista/database build
-
-# Finally build the web app
-RUN pnpm --filter @jurista/web build
+# Generate Prisma and build all in ONE command to avoid cache issues
+RUN pnpm --filter @jurista/database db:generate && \
+    pnpm --filter @jurista/shared build && \
+    pnpm --filter @jurista/database build && \
+    pnpm --filter @jurista/web build
 
 # ========================================
 # Stage 4: Production runner

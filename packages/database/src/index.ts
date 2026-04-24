@@ -38,4 +38,4 @@ export type {
   PaymentMethod,
   CashMovementType,
   Prisma,
-} from "@prisma/client";
+} from "../prisma/generated/client";
