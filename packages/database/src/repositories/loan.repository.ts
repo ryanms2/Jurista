@@ -1,5 +1,5 @@
 import { prisma } from "../client";
-import type { Prisma, Loan, LoanStatus, LoanFrequency } from "@prisma/client";
+import type { Prisma, Loan, LoanStatus, LoanFrequency } from "../../prisma/generated/client";
 
 export class LoanRepository {
   /**
