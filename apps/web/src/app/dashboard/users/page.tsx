@@ -1,12 +1,20 @@
 // ============================================
-// Cobradores — Gerenciamento
+// Cobradores — Gerenciamento (Server Component)
 // ============================================
 
 import { prisma } from "@jurista/database";
+import { ResetPasswordButton } from "./reset-password-button";
 
 async function getUsers() {
   return prisma.user.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      active: true,
+      commissionPct: true,
       _count: {
         select: {
           loans: { where: { status: "ACTIVE" } },
@@ -77,6 +85,8 @@ export default async function UsersPage() {
                 </span>
               </div>
             </div>
+
+            <ResetPasswordButton userId={user.id} userName={user.name} />
           </div>
         ))}
       </div>

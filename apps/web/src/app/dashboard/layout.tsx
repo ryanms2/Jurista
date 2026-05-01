@@ -1,11 +1,9 @@
-// ============================================
-// Dashboard Layout — Sidebar + Content
-// ============================================
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { ChangePasswordModal } from "@/components/change-password-modal";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "📊", label: "Dashboard" },
@@ -25,6 +23,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -127,7 +126,14 @@ export default function DashboardLayout({
               )?.label || "Dashboard"}
             </h2>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              title="Alterar minha senha"
+              className="text-xs text-muted hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+            >
+              🔑 Alterar Senha
+            </button>
             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
               <span className="text-primary text-xs font-bold">A</span>
             </div>
@@ -137,6 +143,11 @@ export default function DashboardLayout({
         {/* Page Content */}
         <div className="p-8">{children}</div>
       </main>
+
+      <ChangePasswordModal
+        open={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   );
 }

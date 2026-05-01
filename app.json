@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "20ded724-02a9-43e8-acc7-7f120f08bca9"
+      }
+    },
+    "android": {
+      "package": "com.lordescanor111.jurista"
+    }
+  }
+}

@@ -217,115 +217,127 @@ async function applyPullData(
   db: Awaited<ReturnType<typeof getDatabase>>,
   entities: Record<string, Record<string, unknown>[]>
 ) {
-  if (entities.users) {
-    for (const user of entities.users) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO users (id, name, email, role, phone, commission_pct, active)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          user.id as string,
-          user.name as string,
-          user.email as string,
-          user.role as string,
-          (user.phone as string) || null,
-          (user.commissionPct as number) || null,
-          user.active ? 1 : 0,
-        ]
-      );
-    }
-  }
+  // Desabilitar FKs temporariamente durante o sync batch
+  // Os dados vêm do servidor já validados, então é seguro
+  await db.execAsync("PRAGMA foreign_keys = OFF;");
 
-  if (entities.clients) {
-    for (const client of entities.clients) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO clients (id, name, cpf, rg, address, phone1, phone2, credit_score, active, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          client.id as string,
-          client.name as string,
-          client.cpf as string,
-          client.rg as string,
-          client.address as string,
-          client.phone1 as string,
-          (client.phone2 as string) || null,
-          client.creditScore as number,
-          client.active ? 1 : 0,
-          client.createdAt as string,
-          client.updatedAt as string,
-        ]
-      );
-    }
-  }
+  try {
+    await db.withTransactionAsync(async () => {
+      if (entities.users) {
+        for (const user of entities.users) {
+          await db.runAsync(
+            `INSERT OR REPLACE INTO users (id, name, email, role, phone, commission_pct, active)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              user.id as string,
+              user.name as string,
+              user.email as string,
+              user.role as string,
+              (user.phone as string) || null,
+              (user.commissionPct as number) || null,
+              user.active ? 1 : 0,
+            ]
+          );
+        }
+      }
 
-  if (entities.loans) {
-    for (const loan of entities.loans) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO loans (id, client_id, collector_id, amount, interest_rate, total_with_interest, frequency, total_installments, installment_amount, status, commission_pct, commission_amount, late_fee_amount, late_fee_days, start_date, end_date, previous_loan_id, notes, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          loan.id, loan.clientId, loan.collectorId, loan.amount,
-          loan.interestRate, loan.totalWithInterest, loan.frequency,
-          loan.totalInstallments, loan.installmentAmount, loan.status,
-          loan.commissionPct, loan.commissionAmount, loan.lateFeeAmount,
-          loan.lateFeeDays, loan.startDate, loan.endDate,
-          loan.previousLoanId, loan.notes, loan.createdAt, loan.updatedAt,
-        ] as (string | number | null)[]
-      );
-    }
-  }
+      if (entities.clients) {
+        for (const client of entities.clients) {
+          await db.runAsync(
+            `INSERT OR REPLACE INTO clients (id, name, cpf, rg, address, phone1, phone2, credit_score, active, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              client.id as string,
+              client.name as string,
+              client.cpf as string,
+              client.rg as string,
+              client.address as string,
+              client.phone1 as string,
+              (client.phone2 as string) || null,
+              client.creditScore as number,
+              client.active ? 1 : 0,
+              client.createdAt as string,
+              client.updatedAt as string,
+            ]
+          );
+        }
+      }
 
-  if (entities.installments) {
-    for (const inst of entities.installments) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO installments (id, loan_id, installment_no, amount, late_fee, total_due, due_date, status, paid_amount, paid_at, days_overdue, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          inst.id, inst.loanId, inst.installmentNo, inst.amount,
-          inst.lateFee, inst.totalDue, inst.dueDate, inst.status,
-          inst.paidAmount, inst.paidAt, inst.daysOverdue,
-          inst.createdAt, inst.updatedAt,
-        ] as (string | number | null)[]
-      );
-    }
-  }
+      if (entities.loans) {
+        for (const loan of entities.loans) {
+          await db.runAsync(
+            `INSERT OR REPLACE INTO loans (id, client_id, collector_id, amount, interest_rate, total_with_interest, frequency, total_installments, installment_amount, status, commission_pct, commission_amount, late_fee_amount, late_fee_days, start_date, end_date, previous_loan_id, notes, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              loan.id, loan.clientId, loan.collectorId, loan.amount,
+              loan.interestRate, loan.totalWithInterest, loan.frequency,
+              loan.totalInstallments, loan.installmentAmount, loan.status,
+              loan.commissionPct, loan.commissionAmount, loan.lateFeeAmount,
+              loan.lateFeeDays, loan.startDate, loan.endDate,
+              loan.previousLoanId, loan.notes, loan.createdAt, loan.updatedAt,
+            ] as (string | number | null)[]
+          );
+        }
+      }
 
-  if (entities.payments) {
-    for (const payment of entities.payments) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO payments (id, installment_id, collector_id, amount, method, received_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          payment.id as string,
-          payment.installmentId as string,
-          payment.collectorId as string,
-          Number(payment.amount),
-          payment.method as string,
-          (payment.receivedAt as string) || (payment.createdAt as string),
-          payment.createdAt as string,
-        ]
-      );
-    }
-  }
+      if (entities.installments) {
+        for (const inst of entities.installments) {
+          await db.runAsync(
+            `INSERT OR REPLACE INTO installments (id, loan_id, installment_no, amount, late_fee, total_due, due_date, status, paid_amount, paid_at, days_overdue, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              inst.id, inst.loanId, inst.installmentNo, inst.amount,
+              inst.lateFee, inst.totalDue, inst.dueDate, inst.status,
+              inst.paidAmount, inst.paidAt, inst.daysOverdue,
+              inst.createdAt, inst.updatedAt,
+            ] as (string | number | null)[]
+          );
+        }
+      }
 
-  if (entities.cashMovements) {
-    for (const mov of entities.cashMovements) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO cash_movements (id, user_id, payment_id, type, amount, description, date, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          mov.id as string,
-          mov.userId as string,
-          (mov.paymentId as string) || null,
-          mov.type as string,
-          Number(mov.amount),
-          (mov.description as string) || null,
-          mov.date as string,
-          mov.createdAt as string,
-        ]
-      );
-    }
+      if (entities.payments) {
+        for (const payment of entities.payments) {
+          await db.runAsync(
+            `INSERT OR REPLACE INTO payments (id, installment_id, collector_id, amount, method, received_at, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              payment.id as string,
+              payment.installmentId as string,
+              payment.collectorId as string,
+              Number(payment.amount),
+              payment.method as string,
+              (payment.receivedAt as string) || (payment.createdAt as string),
+              payment.createdAt as string,
+            ]
+          );
+        }
+      }
+
+      if (entities.cashMovements) {
+        for (const mov of entities.cashMovements) {
+          await db.runAsync(
+            `INSERT OR REPLACE INTO cash_movements (id, user_id, payment_id, type, amount, description, date, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              mov.id as string,
+              mov.userId as string,
+              (mov.paymentId as string) || null,
+              mov.type as string,
+              Number(mov.amount),
+              (mov.description as string) || null,
+              mov.date as string,
+              mov.createdAt as string,
+            ]
+          );
+        }
+      }
+    });
+  } finally {
+    // Sempre reabilitar FKs, mesmo se der erro
+    await db.execAsync("PRAGMA foreign_keys = ON;");
   }
 }
+
 
 /**
  * Obter contagem de itens pendentes na fila

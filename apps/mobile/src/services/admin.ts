@@ -89,3 +89,21 @@ export async function updateSystemConfigs(settings: { key: string; value: string
   });
   return response.data.settings;
 }
+
+// --- Senhas ---
+
+/** Master redefine a senha de um cobrador */
+export async function resetCollectorPassword(id: string, newPassword: string): Promise<void> {
+  await fetchApi(`/api/users/${id}/password`, {
+    method: "POST",
+    body: JSON.stringify({ newPassword }),
+  });
+}
+
+/** Usuário altera a própria senha */
+export async function changeMyPassword(currentPassword: string, newPassword: string): Promise<void> {
+  await fetchApi("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}

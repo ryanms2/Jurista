@@ -11,7 +11,6 @@ const parsedUrl = new URL(safeUrlStr);
 
 const isSSL =
   process.env.MINIO_USE_SSL === "true" || parsedUrl.protocol === "https:";
-const defaultPort = isSSL ? 443 : 80;
 
 // Se tem https e não tem porta explícita na própria URL
 let finalPort: number | undefined = parsedUrl.port ? parseInt(parsedUrl.port, 10) : undefined;

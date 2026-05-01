@@ -9,6 +9,8 @@
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=@jurista/web",
     "dev:mobile": "turbo run dev --filter=@jurista/mobile",
+    "mobile": "cd apps/mobile && npx expo start",
+    "mobile:clear": "cd apps/mobile && npx expo start --clear",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:unit": "turbo run test:unit",

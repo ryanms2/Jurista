@@ -20,11 +20,13 @@
       },
       "package": "com.jurista.app",
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "ACCESS_NETWORK_STATE",
-        "INTERNET"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -51,7 +53,13 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "20ded724-02a9-43e8-acc7-7f120f08bca9"
       }
+    },
+    "ios": {
+      "bundleIdentifier": "com.jurista.app"
     }
   }
 }

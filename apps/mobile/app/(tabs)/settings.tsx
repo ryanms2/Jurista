@@ -18,9 +18,11 @@ import {
   getPendingPhotoCount,
   processPhotoUploads,
   runMaintenanceJobs,
+  changeMyPassword,
 } from "../../src/services";
 import type { CommissionSummary } from "../../src/services";
-import { Card, StatRow, Button, Separator, Badge } from "../../src/components";
+import { Card, StatRow, Button, Separator, Badge, Input } from "../../src/components";
+import { Modal } from "react-native";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuthStore();
@@ -30,6 +32,11 @@ export default function SettingsScreen() {
   const [pendingPhotos, setPendingPhotos] = useState(0);
   const [commission, setCommission] = useState<CommissionSummary | null>(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const loadData = useCallback(async () => {
     const photoCount = await getPendingPhotoCount();
@@ -97,6 +104,34 @@ export default function SettingsScreen() {
       `Multas atualizadas: ${result.feesUpdated}\n` +
         `Inadimplentes marcados: ${result.defaulted}`
     );
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !currentPassword) {
+      Alert.alert("Atenção", "Preencha todos os campos.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert("Atenção", "A nova senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Atenção", "As senhas não coincidem.");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await changeMyPassword(currentPassword, newPassword);
+      setShowPasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      Alert.alert("✅ Sucesso", "Senha alterada com sucesso!");
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Não foi possível alterar a senha.");
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   return (
@@ -240,6 +275,19 @@ export default function SettingsScreen() {
             <Text className="text-text-muted">›</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            onPress={() => setShowPasswordModal(true)}
+            className="flex-row items-center py-3 border-b border-border"
+            activeOpacity={0.7}
+          >
+            <Text className="text-base mr-3">🔑</Text>
+            <View className="flex-1">
+              <Text className="text-text-primary text-sm">Alterar Senha</Text>
+              <Text className="text-text-muted text-xs">Redefina sua senha de acesso</Text>
+            </View>
+            <Text className="text-text-muted">›</Text>
+          </TouchableOpacity>
+
           {user?.role === "MASTER" && (
             <TouchableOpacity
               onPress={() => router.push("/collectors")}
@@ -294,6 +342,65 @@ export default function SettingsScreen() {
           <Text className="text-danger font-sans-semibold">Sair da Conta</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal Alterar Senha */}
+      <Modal
+        visible={showPasswordModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-background rounded-t-3xl px-5 pt-6 pb-10">
+            <View className="w-12 h-1.5 bg-border rounded-full self-center mb-6" />
+            <Text className="text-text-primary text-lg font-sans-bold mb-4">🔑 Alterar Senha</Text>
+
+            <Input
+              label="Senha Atual"
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              placeholder="Digite sua senha atual"
+            />
+            <Input
+              label="Nova Senha"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              placeholder="Mínimo 6 caracteres"
+            />
+            <Input
+              label="Confirmar Nova Senha"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              placeholder="Repita a nova senha"
+            />
+
+            <View className="flex-row gap-3 mt-2">
+              <View className="flex-1">
+                <Button
+                  title="Cancelar"
+                  variant="outline"
+                  onPress={() => {
+                    setShowPasswordModal(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  title="Salvar"
+                  loading={changingPassword}
+                  onPress={handleChangePassword}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }

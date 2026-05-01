@@ -6,6 +6,9 @@
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://prabo-jurista-web.5cao08.easypanel.host"
+      },
       "android": {
         "buildType": "apk"
       }

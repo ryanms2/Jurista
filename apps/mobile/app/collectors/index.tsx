@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, Alert, TouchableOpacity, RefreshControl, Text } from "react-native";
+import { View, ScrollView, Alert, TouchableOpacity, RefreshControl, Text, Modal, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { Stack, router } from "expo-router";
 import { useAuthStore } from "../../src/stores";
-import { getCollectors, toggleCollectorStatus, UserItem } from "../../src/services/admin";
+import { getCollectors, toggleCollectorStatus, resetCollectorPassword, UserItem } from "../../src/services/admin";
 import { Card, Button, Badge } from "../../src/components";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,6 +12,12 @@ export default function CollectorsListScreen() {
   const [collectors, setCollectors] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal State for Password Reset
+  const [resetModalVisible, setResetModalVisible] = useState(false);
+  const [selectedCollector, setSelectedCollector] = useState<{id: string, name: string} | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -66,6 +72,32 @@ export default function CollectorsListScreen() {
         }
       ]
     );
+  };
+
+  const handleResetPassword = (id: string, name: string) => {
+    setSelectedCollector({ id, name });
+    setNewPassword("");
+    setResetModalVisible(true);
+  };
+
+  const confirmResetPassword = async () => {
+    if (!selectedCollector) return;
+    
+    if (newPassword.length < 6) {
+      Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    
+    setIsResetting(true);
+    try {
+      await resetCollectorPassword(selectedCollector.id, newPassword);
+      Alert.alert("✅ Sucesso", `Senha de ${selectedCollector.name} redefinida com sucesso!`);
+      setResetModalVisible(false);
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Não foi possível redefinir a senha.");
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   if (loading) {
@@ -143,6 +175,14 @@ export default function CollectorsListScreen() {
                 </View>
                 <View className="flex-1">
                   <Button 
+                    title="🔑 Senha" 
+                    variant="outline" 
+                    size="sm"
+                    onPress={() => handleResetPassword(collector.id, collector.name)}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button 
                     title={collector.active ? "Desativar" : "Ativar"} 
                     variant={collector.active ? "danger" : "primary"} 
                     size="sm"
@@ -164,6 +204,57 @@ export default function CollectorsListScreen() {
           onPress={() => router.push("/collectors/new")} 
         />
       </View>
+
+      {/* Modal para redefinir senha */}
+      <Modal
+        visible={resetModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setResetModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1 justify-center px-5 bg-black/60"
+        >
+          <View className="bg-surface rounded-2xl p-6">
+            <Text className="text-xl font-sans-bold text-text-primary mb-2">🔑 Redefinir Senha</Text>
+            <Text className="text-sm text-text-secondary mb-4">
+              Digite a nova senha para {selectedCollector?.name}:
+            </Text>
+
+            <View className="bg-background rounded-xl px-4 py-3 border border-border mb-6">
+              <TextInput
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Nova Senha"
+                placeholderTextColor="#9ca3af"
+                secureTextEntry
+                autoCapitalize="none"
+                className="text-text-primary font-sans text-base"
+              />
+            </View>
+
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Button 
+                  title="Cancelar" 
+                  variant="outline" 
+                  onPress={() => setResetModalVisible(false)} 
+                  disabled={isResetting}
+                />
+              </View>
+              <View className="flex-1">
+                <Button 
+                  title="Confirmar" 
+                  variant="primary" 
+                  onPress={confirmResetPassword} 
+                  loading={isResetting}
+                />
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
