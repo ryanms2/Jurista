@@ -24,6 +24,23 @@ async function main() {
   });
   console.log(`✅ Master admin criado: ${master.email} (senha: master123)`);
 
+  // Criar Admin Secundário
+  const adminPwd = await bcrypt.hash("admin123", 10);
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@jurista.com" },
+    update: {},
+    create: {
+      name: "Admin Secundário",
+      email: "admin@jurista.com",
+      passwordHash: adminPwd,
+      role: "MASTER",
+      phone: "11977777777",
+      active: true,
+      commissionPct: 0,
+    },
+  });
+  console.log(`✅ Admin Secundário criado: ${admin.email} (senha: admin123)`);
+
   // Criar Cobrador Teste
   const collectorPwd = await bcrypt.hash("cobrador123", 10);
   const collector = await prisma.user.upsert({

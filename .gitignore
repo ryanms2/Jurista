@@ -52,3 +52,4 @@ apps/mobile/ios/
 *.apk
 *.aab
 *.ipa
+DEVELOPER_GUIDE.md

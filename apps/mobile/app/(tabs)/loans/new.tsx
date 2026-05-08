@@ -171,12 +171,18 @@ export default function NewLoanScreen() {
         ]
       );
 
+      // Preparar parcelas com IDs determinísticos para evitar duplicação no sync
+      const installmentsWithIds = installmentInputs.map((inst) => ({
+        ...inst,
+        id: `${loanId}-${inst.installmentNo}`,
+      }));
+
       // Inserir parcelas
-      for (const inst of installmentInputs) {
+      for (const inst of installmentsWithIds) {
         await db.runAsync(
           `INSERT INTO installments (id, loan_id, installment_no, amount, total_due, due_date, status)
            VALUES (?, ?, ?, ?, ?, ?, 'PENDING')`,
-          [Crypto.randomUUID(), loanId, inst.installmentNo, inst.amount, inst.totalDue, inst.dueDate.toISOString()]
+          [inst.id, loanId, inst.installmentNo, inst.amount, inst.totalDue, inst.dueDate.toISOString()]
         );
       }
 
@@ -194,7 +200,7 @@ export default function NewLoanScreen() {
         commissionAmount: simulation.commissionAmount,
         startDate: new Date().toISOString(),
         notes,
-        installments: installmentInputs,
+        installments: installmentsWithIds,
       });
 
       // Registrar saída no caixa
