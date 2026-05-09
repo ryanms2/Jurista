@@ -53,3 +53,4 @@ apps/mobile/ios/
 *.aab
 *.ipa
 DEVELOPER_GUIDE.md
+.env.development
